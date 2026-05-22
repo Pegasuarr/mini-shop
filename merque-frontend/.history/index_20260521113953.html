@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MERQE — Shop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="logo">MER<span>QE</span></div>
+    <nav>
+      <button class="active" onclick="showView('shop', this)">
+        <i data-lucide="store" style="width:13px;height:13px"></i> Shop
+      </button>
+      <button onclick="showView('cart', this)">
+        <i data-lucide="shopping-bag" style="width:13px;height:13px"></i> Cart
+      </button>
+      <button onclick="showView('orders', this)">
+        <i data-lucide="package" style="width:13px;height:13px"></i> Orders
+      </button>
+    </nav>
+    <button class="cart-btn" onclick="showView('cart', document.querySelectorAll('nav button')[1])">
+      <i data-lucide="shopping-cart" style="width:16px;height:16px"></i> Cart
+      <span class="cart-count" id="cart-count">0</span>
+    </button>
+  </header>
+
+  <!-- ── SHOP VIEW ── -->
+  <div id="view-shop" class="view active">
+    <div class="hero">
+      <div>
+        <div class="hero-label">New Collection · 2026</div>
+        <h1>Curated<br>Objects</h1>
+        <p>A tight edit of things worth owning — chosen for craft, utility, and enduring design.</p>
+      </div>
+      <div class="hero-img">
+        <i data-lucide="shopping-bag" style="width:72px;height:72px;stroke:var(--accent);opacity:.5;stroke-width:1"></i>
+      </div>
+    </div>
+
+    <div class="section-label">Categories</div>
+    <div class="categories" id="categories-bar"></div>
+
+    <div class="section-label">Products</div>
+    <div class="products-grid" id="products-grid"></div>
+  </div>
+
+  <!-- ── CART VIEW ── -->
+  <div id="view-cart" class="view">
+    <h2>
+      <i data-lucide="shopping-bag" style="width:34px;height:34px;stroke:var(--accent);stroke-width:1.5"></i>
+      Your Cart
+    </h2>
+    <div id="cart-body"></div>
+  </div>
+
+  <!-- ── ORDERS VIEW ── -->
+  <div id="view-orders" class="view">
+    <h2>
+      <i data-lucide="package" style="width:34px;height:34px;stroke:var(--accent);stroke-width:1.5"></i>
+      Orders
+    </h2>
+    <div id="orders-body"></div>
+  </div>
+
+  <!-- ── CHECKOUT MODAL ── -->
+  <div id="checkout-modal" style="display:none">
+    <div class="modal-overlay">
+      <div class="modal">
+        <h3>
+          <i data-lucide="credit-card" style="width:24px;height:24px;stroke:var(--accent)"></i>
+          Checkout
+        </h3>
+        <div class="form-group">
+          <label>
+            <i data-lucide="user" style="width:11px;height:11px;stroke:var(--muted)"></i>
+            Full Name
+          </label>
+          <input type="text" id="f-name" placeholder="Jane Doe">
+        </div>
+        <div class="form-group">
+          <label>
+            <i data-lucide="mail" style="width:11px;height:11px;stroke:var(--muted)"></i>
+            Email
+          </label>
+          <input type="email" id="f-email" placeholder="jane@example.com">
+        </div>
+        <div class="form-group">
+          <label>
+            <i data-lucide="map-pin" style="width:11px;height:11px;stroke:var(--muted)"></i>
+            Address
+          </label>
+          <input type="text" id="f-address" placeholder="123 Main St, City">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn-confirm" onclick="placeOrder()">
+            <i data-lucide="check" style="width:14px;height:14px;stroke:#000"></i>
+            Place Order
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

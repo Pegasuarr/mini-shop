@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MERQE — Curated Objects</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">MER<span>QE</span></div>
+    <nav>
+      <button class="active" onclick="showView('shop', this)">
+        <i data-lucide="store"></i> Shop
+      </button>
+      <button onclick="showView('cart', this)">
+        <i data-lucide="shopping-bag"></i> Cart
+      </button>
+      <button onclick="showView('orders', this)">
+        <i data-lucide="package"></i> Orders
+      </button>
+    </nav>
+    <button class="cart-btn" onclick="showView('cart', document.querySelectorAll('nav button')[1])">
+      <i data-lucide="shopping-cart"></i> Cart
+      <span class="cart-count" id="cart-count">0</span>
+    </button>
+  </header>
+
+  <!-- SHOP VIEW -->
+  <div id="view-shop" class="view active">
+    <div class="hero">
+      <div>
+        <div class="hero-label">New Collection · 2026</div>
+        <h1>Curated<br>Objects</h1>
+        <p>A tight edit of things worth owning — chosen for craft, utility, and enduring design.</p>
+      </div>
+      <div class="hero-img">
+        <i data-lucide="shopping-bag"></i>
+      </div>
+    </div>
+
+    <div class="section-label">Categories</div>
+    <div class="categories" id="categories-bar"></div>
+
+    <div class="section-label">Products</div>
+    <div class="products-grid" id="products-grid"></div>
+  </div>
+
+  <!-- CART VIEW -->
+  <div id="view-cart" class="view">
+    <h2>
+      <i data-lucide="shopping-bag"></i>
+      Your Cart
+    </h2>
+    <div id="cart-body"></div>
+  </div>
+
+  <!-- ORDERS VIEW -->
+  <div id="view-orders" class="view">
+    <h2>
+      <i data-lucide="package"></i>
+      Orders
+    </h2>
+    <div id="orders-body"></div>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkout-modal" style="display:none">
+    <div class="modal-overlay">
+      <div class="modal">
+        <h3>
+          <i data-lucide="credit-card"></i>
+          Checkout
+        </h3>
+        <div class="form-group">
+          <label>
+            <i data-lucide="user"></i>
+            Full Name
+          </label>
+          <input type="text" id="f-name" placeholder="Jane Doe">
+        </div>
+        <div class="form-group">
+          <label>
+            <i data-lucide="mail"></i>
+            Email
+          </label>
+          <input type="email" id="f-email" placeholder="jane@example.com">
+        </div>
+        <div class="form-group">
+          <label>
+            <i data-lucide="map-pin"></i>
+            Address
+          </label>
+          <input type="text" id="f-address" placeholder="123 Main St, City">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn-confirm" onclick="placeOrder()">
+            <i data-lucide="check"></i>
+            Place Order
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
