@@ -20,10 +20,14 @@ func main() {
 		port = "8080"
 	}
 
-	// Wire dependencies
-	s := store.New()
-	h := handler.New(s)
+	s, err := store.New()
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer s.Close()
+	log.Println("connected to PostgreSQL")
 
+	h := handler.New(s)
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)
 
@@ -35,7 +39,6 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Start server
 	go func() {
 		log.Printf("🛍  MERQE listening on http://localhost:%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -43,7 +46,6 @@ func main() {
 		}
 	}()
 
-	// Graceful shutdown on SIGINT / SIGTERM
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

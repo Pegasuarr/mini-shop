@@ -2,11 +2,15 @@ package handler
 
 import "net/http"
 
-// HandleCategories serves GET /api/categories.
 func (h *Handler) HandleCategories(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-	writeJSON(w, http.StatusOK, h.store.GetCategories())
+	cats, err := h.store.GetCategories()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to fetch categories")
+		return
+	}
+	writeJSON(w, http.StatusOK, cats)
 }

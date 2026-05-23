@@ -2,7 +2,6 @@ package handler
 
 import "net/http"
 
-// HandleUserByID serves GET /api/users/:id.
 func (h *Handler) HandleUserByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")

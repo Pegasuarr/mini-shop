@@ -10,14 +10,15 @@ import (
 	"github.com/merqe/backend/internal/models"
 )
 
-// HandleOrders serves:
-//
-//	GET  /api/orders  → list all orders
-//	POST /api/orders  → create a new order
 func (h *Handler) HandleOrders(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, http.StatusOK, h.store.GetOrders())
+		orders, err := h.store.GetOrders()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to fetch orders")
+			return
+		}
+		writeJSON(w, http.StatusOK, orders)
 	case http.MethodPost:
 		h.createOrder(w, r)
 	default:
@@ -25,10 +26,6 @@ func (h *Handler) HandleOrders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HandleOrderByID serves:
-//
-//	GET   /api/orders/:id  → get single order
-//	PATCH /api/orders/:id  → update order status
 func (h *Handler) HandleOrderByID(w http.ResponseWriter, r *http.Request) {
 	id, ok := parseID(lastSegment(r.URL.Path))
 	if !ok {
@@ -45,7 +42,6 @@ func (h *Handler) HandleOrderByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// createOrder validates the request body, locks prices server-side, and persists.
 func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -63,7 +59,6 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate items and lock price from server-side store
 	items := make([]models.OrderItem, 0, len(req.Items))
 	for _, item := range req.Items {
 		if item.Qty <= 0 {
@@ -78,18 +73,22 @@ func (h *Handler) createOrder(w http.ResponseWriter, r *http.Request) {
 		items = append(items, models.OrderItem{
 			ProductID: p.ID,
 			Qty:       item.Qty,
-			Price:     p.Price, // always use server-side price
+			Price:     p.Price,
 		})
 	}
 
-	user := h.store.CreateUser(req.Name, req.Email, req.Address)
-	order := h.store.CreateOrder(models.Order{
-		UserID: user.ID,
-		User:   user,
-		Date:   time.Now().UTC(),
-		Status: models.StatusPending,
-		Items:  items,
-	})
+	user, err := h.store.CreateUser(req.Name, req.Email, req.Address)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to create user")
+		return
+	}
+
+	order, err := h.store.CreateOrder(user.ID, user, time.Now().UTC(), items)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to create order")
+		return
+	}
+
 	writeJSON(w, http.StatusCreated, order)
 }
 

@@ -1,34 +1,39 @@
 package store
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/merqe/backend/internal/models"
 )
 
-// GetUserByID returns the user with the given ID or an error if not found.
 func (s *Store) GetUserByID(id int) (models.User, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	for _, u := range s.users {
-		if u.ID == id {
-			return u, nil
-		}
+	var u models.User
+	var address sql.NullString
+
+	err := s.db.QueryRow(`
+		SELECT id, name, email, address FROM users WHERE id = $1`, id).
+		Scan(&u.ID, &u.Name, &u.Email, &address)
+
+	if err == sql.ErrNoRows {
+		return models.User{}, fmt.Errorf("user %d not found", id)
 	}
-	return models.User{}, fmt.Errorf("user %d not found", id)
+	if err != nil {
+		return models.User{}, err
+	}
+	if address.Valid {
+		u.Address = address.String
+	}
+	return u, nil
 }
 
-// CreateUser adds a new user and returns it with its assigned ID.
-func (s *Store) CreateUser(name, email, address string) models.User {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	u := models.User{
-		ID:      s.nextUserID,
-		Name:    name,
-		Email:   email,
-		Address: address,
-	}
-	s.nextUserID++
-	s.users = append(s.users, u)
-	return u
+func (s *Store) CreateUser(name, email, address string) (models.User, error) {
+	var u models.User
+	err := s.db.QueryRow(`
+		INSERT INTO users (name, email, address)
+		VALUES ($1, $2, $3)
+		RETURNING id, name, email, address`,
+		name, email, address,
+	).Scan(&u.ID, &u.Name, &u.Email, &u.Address)
+	return u, err
 }

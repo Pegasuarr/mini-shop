@@ -1,10 +1,7 @@
-// Package middleware provides reusable HTTP middleware.
 package middleware
 
 import "net/http"
 
-// CORS adds permissive CORS headers and handles pre-flight OPTIONS requests.
-// Restrict AllowOrigin in production.
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")

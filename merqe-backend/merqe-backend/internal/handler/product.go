@@ -2,7 +2,6 @@ package handler
 
 import "net/http"
 
-// HandleProducts serves GET /api/products[?categoryId=N].
 func (h *Handler) HandleProducts(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -14,10 +13,14 @@ func (h *Handler) HandleProducts(w http.ResponseWriter, r *http.Request) {
 			catID = id
 		}
 	}
-	writeJSON(w, http.StatusOK, h.store.GetProducts(catID))
+	products, err := h.store.GetProducts(catID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to fetch products")
+		return
+	}
+	writeJSON(w, http.StatusOK, products)
 }
 
-// HandleProductByID serves GET /api/products/:id.
 func (h *Handler) HandleProductByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
