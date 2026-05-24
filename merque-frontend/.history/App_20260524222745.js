@@ -225,7 +225,7 @@ function removeFromCart(productId) {
   showToast("Item removed");
 }
 
-//  Checkout 
+// ── Checkout ──────────────────────────────────────────────────────────
 function openCheckout() {
   if (!cart.length) { showToast("Your cart is empty", true); return; }
   document.getElementById("checkout-modal").style.display = "block";
@@ -264,7 +264,7 @@ async function placeOrder() {
   }
 }
 
-//  Orders 
+// ── Orders ────────────────────────────────────────────────────────────
 async function loadOrders() {
   const el = document.getElementById("orders-body");
   el.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">Loading…</div>`;
@@ -328,7 +328,7 @@ function renderOrders(orders) {
   rerender();
 }
 
-//  Init 
+// ── Init ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   // Nav buttons
   document.querySelectorAll("nav button, .cart-btn").forEach(btn => {

@@ -8,7 +8,7 @@ let filter     = 0;
 let products   = [];
 let categories = [];
 
-// Helpers 
+// ── Helpers ───────────────────────────────────────────────────────────
 const fmt = n => "$" + parseFloat(n).toFixed(2);
 
 function updateCartBadge() {
@@ -30,7 +30,7 @@ function showToast(msg, isError = false) {
   setTimeout(() => t.remove(), 3000);
 }
 
-// Views 
+// ── Views ─────────────────────────────────────────────────────────────
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll("nav button, .cart-btn").forEach(b => b.classList.remove("active"));
@@ -40,7 +40,7 @@ function showView(name) {
   if (name === "orders") loadOrders();
 }
 
-// API fetch helper
+// ── API ───────────────────────────────────────────────────────────────
 async function apiFetch(path, options = {}) {
   const res = await fetch(API + path, {
     headers: { "Content-Type": "application/json" },
@@ -51,7 +51,7 @@ async function apiFetch(path, options = {}) {
   return data;
 }
 
-//  Shop 
+// ── Shop ──────────────────────────────────────────────────────────────
 async function initShop() {
   document.getElementById("products-grid").innerHTML =
     `<div style="text-align:center;padding:60px;color:var(--muted)">Loading products…</div>`;
@@ -141,7 +141,7 @@ function addToCart(productId) {
   showToast("Added to cart ✨");
 }
 
-//  Cart 
+// ── Cart ──────────────────────────────────────────────────────────────
 function renderCart() {
   const el = document.getElementById("cart-body");
 
@@ -225,7 +225,7 @@ function removeFromCart(productId) {
   showToast("Item removed");
 }
 
-//  Checkout 
+// ── Checkout ──────────────────────────────────────────────────────────
 function openCheckout() {
   if (!cart.length) { showToast("Your cart is empty", true); return; }
   document.getElementById("checkout-modal").style.display = "block";
@@ -264,7 +264,7 @@ async function placeOrder() {
   }
 }
 
-//  Orders 
+// ── Orders ────────────────────────────────────────────────────────────
 async function loadOrders() {
   const el = document.getElementById("orders-body");
   el.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">Loading…</div>`;
@@ -328,7 +328,7 @@ function renderOrders(orders) {
   rerender();
 }
 
-//  Init 
+// ── Init ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   // Nav buttons
   document.querySelectorAll("nav button, .cart-btn").forEach(btn => {

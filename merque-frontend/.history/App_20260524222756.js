@@ -328,7 +328,7 @@ function renderOrders(orders) {
   rerender();
 }
 
-//  Init 
+// ── Init ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   // Nav buttons
   document.querySelectorAll("nav button, .cart-btn").forEach(btn => {
