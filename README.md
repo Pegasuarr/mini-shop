@@ -2,3 +2,4 @@ MINI MERQE is a mini shop built for assignment purposes only. It features a vani
 
 
 ⚠️Note: this project has no authentication or security implementation as it is for academic/assignment use only.
+ 
