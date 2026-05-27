@@ -1,0 +1,37 @@
+flowchart TD
+    classDef startEnd fill:#f9f,stroke:#333,stroke-width:2px
+    classDef frontend fill:#bbf,stroke:#333,stroke-width:2px
+    classDef backend fill:#f96,stroke:#333,stroke-width:2px
+    classDef database fill:#9f9,stroke:#333,stroke-width:2px
+
+    Start([Start Application]):::startEnd
+    ShowProducts[Frontend: Display Product Catalog]:::frontend
+    ClickProduct[Frontend: User Clicks on a Product]:::frontend
+    AddToCart[Frontend: Push Item to Cart State via JavaScript]:::frontend
+    ViewCart[Frontend: Open Cart Page and Calculate Total Price]:::frontend
+    ClickOrder[Frontend: User Clicks Order Button]:::frontend
+    FetchAPI[Frontend: Send Order Data to Backend via JS Fetch/Axios API]:::frontend
+    ReceiveData[Backend: Receive Incoming Order Payload]:::backend
+    CheckData{Backend: Is Data Valid?}:::backend
+    SaveDB[(Database: Save Order and Transaction Details)]:::database
+    SuccessRes[Backend: Return Success Response to Client]:::backend
+    FailRes[Backend: Return Error Response to Client]:::backend
+    ShowSuccess[Frontend: Show Order Placed Successfully Popup]:::frontend
+    ShowError[Frontend: Show Order Failed Notification]:::frontend
+    End([End Process]):::startEnd
+
+    Start --> ShowProducts
+    ShowProducts --> ClickProduct
+    ClickProduct --> AddToCart
+    AddToCart --> ViewCart
+    ViewCart --> ClickOrder
+    ClickOrder --> FetchAPI
+    FetchAPI --> ReceiveData
+    ReceiveData --> CheckData
+    CheckData -- Yes --> SaveDB
+    CheckData -- No --> FailRes
+    SaveDB --> SuccessRes
+    SuccessRes --> ShowSuccess
+    FailRes --> ShowError
+    ShowSuccess --> End
+    ShowError --> ViewCart

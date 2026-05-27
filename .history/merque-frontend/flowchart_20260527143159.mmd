@@ -1,0 +1,47 @@
+flowchart TD
+    classDef startEnd fill:#f9f,stroke:#333,stroke-width:2px
+    classDef frontend fill:#bbf,stroke:#333,stroke-width:2px
+    classDef backend fill:#f96,stroke:#333,stroke-width:2px
+    classDef database fill:#9f9,stroke:#333,stroke-width:2px
+    classDef decision fill:#ff9,stroke:#333,stroke-width:2px
+
+    Start([Open the Website]):::startEnd
+
+    BrowseProducts[Browse the Product List]:::frontend
+    ClickProduct[Click on a Product]:::frontend
+    AddToCart[Add it to the Cart]:::frontend
+    ViewCart[Go to Cart and Check the Total]:::frontend
+
+    KeepShopping{Want to keep shopping?}:::decision
+    PlaceOrder[Click the Order Button]:::frontend
+    SendOrder[Send the Order to the Server]:::frontend
+
+    GetOrder[Server receives the order]:::backend
+    CheckOrder{Is the order information complete and valid?}:::decision
+
+    SaveOrder[(Save the order to the database)]:::database
+    RejectOrder[Tell the user something went wrong]:::backend
+
+    ConfirmOrder[Send a success message back to the user]:::backend
+    ShowSuccess[Show a popup: Your order was placed!]:::frontend
+    ShowError[Show a message: Order failed, please try again]:::frontend
+
+    Done([Done! Order is complete]):::startEnd
+
+    Start --> BrowseProducts
+    BrowseProducts --> ClickProduct
+    ClickProduct --> AddToCart
+    AddToCart --> ViewCart
+    ViewCart --> KeepShopping
+    KeepShopping -- Yes, add more items --> BrowseProducts
+    KeepShopping -- No, ready to order --> PlaceOrder
+    PlaceOrder --> SendOrder
+    SendOrder --> GetOrder
+    GetOrder --> CheckOrder
+    CheckOrder -- Yes, looks good --> SaveOrder
+    CheckOrder -- No, something is missing --> RejectOrder
+    SaveOrder --> ConfirmOrder
+    ConfirmOrder --> ShowSuccess
+    RejectOrder --> ShowError
+    ShowError --> ViewCart
+    ShowSuccess --> Done
