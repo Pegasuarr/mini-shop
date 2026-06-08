@@ -53,7 +53,7 @@ The server will serve them at `http://localhost:8080/`.
 ```json
 [
   { "id": 1, "name": "Lighting", "icon": "lamp" },
-  ...
+  "..."
 ]
 ```
 
