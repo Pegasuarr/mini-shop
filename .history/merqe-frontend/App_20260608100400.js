@@ -257,7 +257,7 @@ async function placeOrder() {
     updateCartBadge();
     closeModal();
     renderShop();
-    showToast(` Order Successful #${order.id} placed!`);
+    showToast(`🎉 Order #${order.id} placed!`);
     setTimeout(() => showView("orders"), 800);
   } catch (e) {
     showToast("Error: " + e.message, true);

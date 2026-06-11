@@ -20,7 +20,7 @@ flowchart TD
     CheckOrder{Is the order valid and complete?}:::decision
 
     SaveOrder[(Save the order to DB)]:::database
-    RejectOrder[Tell the user sth went wrong]:::io
+    RejectOrder[Tell the user something went wrong]:::io
 
     ConfirmOrder[Send a success message back to the user]:::process
     ShowSuccess[Show popup: Your order was placed!]:::io
