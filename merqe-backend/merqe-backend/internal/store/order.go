@@ -44,7 +44,6 @@ func (s *Store) GetOrders() ([]models.Order, error) {
 
 func (s *Store) GetOrderByID(id int) (models.Order, error) {
 	var o models.Order
-	var addr sql.NullString
 
 	err := s.db.QueryRow(`
 		SELECT o.id, o.user_id, o.date, o.status,
@@ -53,16 +52,13 @@ func (s *Store) GetOrderByID(id int) (models.Order, error) {
 		JOIN users u ON u.id = o.user_id
 		WHERE o.id = $1`, id).
 		Scan(&o.ID, &o.UserID, &o.Date, &o.Status,
-			&o.User.ID, &o.User.Name, &o.User.Email, &addr)
+			&o.User.ID, &o.User.Name, &o.User.Email, &o.User.Address)
 
 	if err == sql.ErrNoRows {
 		return models.Order{}, fmt.Errorf("order %d not found", id)
 	}
 	if err != nil {
 		return models.Order{}, err
-	}
-	if addr.Valid {
-		o.User.Address = addr.String
 	}
 
 	items, err := s.getOrderItems(id)
@@ -118,16 +114,13 @@ func (s *Store) UpdateOrderStatus(id int, status models.OrderStatus) (models.Ord
 	return s.GetOrderByID(id)
 }
 
+// scanOrder scans a row into an Order with User data
 func scanOrder(row *sql.Rows) (models.Order, error) {
 	var o models.Order
-	var addr sql.NullString
 	err := row.Scan(
 		&o.ID, &o.UserID, &o.Date, &o.Status,
-		&o.User.ID, &o.User.Name, &o.User.Email, &addr,
+		&o.User.ID, &o.User.Name, &o.User.Email, &o.User.Address,
 	)
-	if addr.Valid {
-		o.User.Address = addr.String
-	}
 	return o, err
 }
 

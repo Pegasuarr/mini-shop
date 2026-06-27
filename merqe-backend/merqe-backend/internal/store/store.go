@@ -22,8 +22,8 @@ type Config struct {
 	SSLMode  string
 }
 
-// Defaults match your application.yaml datasource block.
 func loadConfig() Config {
+	// These settings work with your Docker PostgreSQL
 	return Config{
 		Host:     getEnv("DB_HOST", "localhost"),
 		Port:     getEnv("DB_PORT", "5432"),
@@ -43,19 +43,22 @@ func (c Config) dsn() string {
 
 func New() (*Store, error) {
 	cfg := loadConfig()
-	log.Printf("connecting → postgres://%s:%s/%s (user: %s)",
+	log.Printf("🔗 connecting to PostgreSQL: %s:%s/%s (user: %s)",
 		cfg.Host, cfg.Port, cfg.DBName, cfg.User)
 
 	db, err := sql.Open("pgx", cfg.dsn())
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
+
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("ping db: %w", err)
 	}
 
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(5)
+
+	log.Println("✅ PostgreSQL connection successful")
 
 	if err := Migrate(db); err != nil {
 		return nil, fmt.Errorf("migrate: %w", err)

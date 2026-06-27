@@ -1,14 +1,14 @@
-
-
 const API = 'http://localhost:8080/api';
+const BASE = 'http://localhost:8080';
 
-//  State 
-let cart       = [];   // [{ productId, qty }]
-let filter     = 0;
-let products   = [];
+// State
+let cart = [];
+let filter = 0;
+let products = [];
 let categories = [];
+let searchQuery = '';
 
-// Helpers 
+// Helpers
 const fmt = n => "$" + parseFloat(n).toFixed(2);
 
 function updateCartBadge() {
@@ -30,17 +30,18 @@ function showToast(msg, isError = false) {
   setTimeout(() => t.remove(), 3000);
 }
 
-// Views 
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll("nav button, .cart-btn").forEach(b => b.classList.remove("active"));
-  document.getElementById("view-" + name).classList.add("active");
+  const view = document.getElementById("view-" + name);
+  if (view) view.classList.add("active");
   document.querySelectorAll(`[data-view="${name}"]`).forEach(b => b.classList.add("active"));
-  if (name === "cart")   renderCart();
+  if (name === "cart") renderCart();
   if (name === "orders") loadOrders();
+  if (name === "report") loadReport();
+  rerender();
 }
 
-// API fetch helper
 async function apiFetch(path, options = {}) {
   const res = await fetch(API + path, {
     headers: { "Content-Type": "application/json" },
@@ -51,7 +52,7 @@ async function apiFetch(path, options = {}) {
   return data;
 }
 
-//  Shop 
+// ==================== SHOP ====================
 async function initShop() {
   document.getElementById("products-grid").innerHTML =
     `<div style="text-align:center;padding:60px;color:var(--muted)">Loading products…</div>`;
@@ -68,7 +69,6 @@ async function initShop() {
 }
 
 function renderShop() {
-  // Categories bar
   const bar = document.getElementById("categories-bar");
   bar.innerHTML = `
     <button class="cat-tag ${filter === 0 ? "active" : ""}" onclick="setFilter(0)">
@@ -80,22 +80,39 @@ function renderShop() {
       </button>
     `).join("")}`;
 
-  // Products
-  const visible = filter ? products.filter(p => p.categoryId === filter) : products;
+  let visible = filter ? products.filter(p => p.categoryId === filter) : products;
   const grid = document.getElementById("products-grid");
 
+  if (searchQuery) {
+    visible = visible.filter(p =>
+      p.name.toLowerCase().includes(searchQuery) ||
+      (p.categoryName && p.categoryName.toLowerCase().includes(searchQuery))
+    );
+  }
+
   if (!visible.length) {
-    grid.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">No products found.</div>`;
+    let message = searchQuery
+      ? `<div class="no-search-results">
+          <i data-lucide="search"></i>
+          <h3>No products found</h3>
+          <p>Try adjusting your search terms for "${searchQuery}"</p>
+          <button onclick="clearProductSearch()" style="margin-top:12px;padding:8px 20px;border:1px solid var(--border);border-radius:40px;background:var(--surface);cursor:pointer;">
+            Clear Search
+          </button>
+        </div>`
+      : `<div style="text-align:center;padding:60px;color:var(--muted)">No products found.</div>`;
+    grid.innerHTML = message;
     rerender();
     return;
   }
 
   grid.innerHTML = visible.map(p => {
-    const cat    = categories.find(c => c.id === p.categoryId) || {};
+    const cat = categories.find(c => c.id === p.categoryId) || {};
     const inCart = cart.find(i => i.productId === p.id);
 
+    // FIX 1: correct template literal with BASE prefix
     const imgHTML = p.imageUrl
-      ? `<img src="${p.imageUrl}" alt="${p.name}"
+      ? `<img src="${BASE}/${p.imageUrl}" alt="${p.name}"
              style="width:100%;height:100%;object-fit:cover;transition:transform .4s"
              onerror="this.style.display='none'">`
       : `<i data-lucide="${p.icon || 'gift'}"></i>`;
@@ -124,11 +141,56 @@ function renderShop() {
       </div>`;
   }).join("");
 
+  updateSearchResultsInfo(visible.length);
   rerender();
+}
+
+// ==================== PRODUCT SEARCH ====================
+function searchProducts(query) {
+  searchQuery = query.trim().toLowerCase();
+  const searchInfo = document.getElementById('searchResultsInfo');
+  const clearBtn = document.getElementById('clearSearchBtn');
+
+  if (!searchQuery) {
+    clearProductSearch();
+    return;
+  }
+
+  if (clearBtn) clearBtn.style.display = 'flex';
+  if (searchInfo) searchInfo.style.display = 'flex';
+  filter = 0;
+  renderShop();
+}
+
+function clearProductSearch() {
+  searchQuery = '';
+  const input = document.getElementById('productSearchInput');
+  const searchInfo = document.getElementById('searchResultsInfo');
+  const clearBtn = document.getElementById('clearSearchBtn');
+
+  if (input) input.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (searchInfo) searchInfo.style.display = 'none';
+  filter = 0;
+  renderShop();
+}
+
+function updateSearchResultsInfo(count) {
+  const resultCount = document.getElementById('searchResultCount');
+  if (resultCount && searchQuery) {
+    resultCount.textContent = `Found ${count} product${count !== 1 ? 's' : ''} matching "${searchQuery}"`;
+  }
 }
 
 function setFilter(id) {
   filter = id;
+  const input = document.getElementById('productSearchInput');
+  if (input) input.value = '';
+  searchQuery = '';
+  const searchInfo = document.getElementById('searchResultsInfo');
+  if (searchInfo) searchInfo.style.display = 'none';
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
   renderShop();
 }
 
@@ -138,13 +200,12 @@ function addToCart(productId) {
   else cart.push({ productId, qty: 1 });
   updateCartBadge();
   renderShop();
-  showToast("Added to cart ");
+  showToast("Added to cart");
 }
 
-//  Cart 
+// ==================== CART ====================
 function renderCart() {
   const el = document.getElementById("cart-body");
-
   if (!cart.length) {
     el.innerHTML = `
       <div class="cart-empty">
@@ -160,13 +221,14 @@ function renderCart() {
 
   let subtotal = 0;
   const rows = cart.map(item => {
-    const p   = products.find(p => p.id === item.productId) || {};
+    const p = products.find(p => p.id === item.productId) || {};
     const cat = categories.find(c => c.id === p.categoryId) || {};
     const lineTotal = (p.price || 0) * item.qty;
     subtotal += lineTotal;
 
+    // FIX 2: cart images also use BASE prefix
     const imgHTML = p.imageUrl
-      ? `<img src="${p.imageUrl}" alt="${p.name}"
+      ? `<img src="${BASE}/${p.imageUrl}" alt="${p.name}"
              style="width:100%;height:100%;object-fit:cover;border-radius:20px"
              onerror="this.style.display='none'">`
       : `<i data-lucide="${p.icon || 'gift'}"></i>`;
@@ -190,9 +252,9 @@ function renderCart() {
       </div>`;
   }).join("");
 
-  const tax      = subtotal * 0.08;
+  const tax = subtotal * 0.08;
   const shipping = 7.99;
-  const total    = subtotal + tax + shipping;
+  const total = subtotal + tax + shipping;
 
   el.innerHTML = rows + `
     <div class="cart-summary">
@@ -225,7 +287,7 @@ function removeFromCart(productId) {
   showToast("Item removed");
 }
 
-//  Checkout 
+// ==================== CHECKOUT ====================
 function openCheckout() {
   if (!cart.length) { showToast("Your cart is empty", true); return; }
   document.getElementById("checkout-modal").style.display = "block";
@@ -238,12 +300,12 @@ function closeModal() {
 }
 
 async function placeOrder() {
-  const name    = document.getElementById("f-name").value.trim();
-  const email   = document.getElementById("f-email").value.trim();
+  const name = document.getElementById("f-name").value.trim();
+  const email = document.getElementById("f-email").value.trim();
   const address = document.getElementById("f-address").value.trim();
 
   if (!name || !email || !address) { showToast("Please fill all fields", true); return; }
-  if (!email.includes("@"))        { showToast("Invalid email", true); return; }
+  if (!email.includes("@")) { showToast("Invalid email", true); return; }
 
   const payload = {
     name, email, address,
@@ -257,14 +319,14 @@ async function placeOrder() {
     updateCartBadge();
     closeModal();
     renderShop();
-    showToast(` Order Successful #${order.id} placed!`);
+    showToast(`Order Successful #${order.id} placed!`);
     setTimeout(() => showView("orders"), 800);
   } catch (e) {
     showToast("Error: " + e.message, true);
   }
 }
 
-//  Orders 
+// ==================== ORDERS ====================
 async function loadOrders() {
   const el = document.getElementById("orders-body");
   el.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">Loading…</div>`;
@@ -294,12 +356,12 @@ function renderOrders(orders) {
   }
 
   el.innerHTML = orders.map(o => {
-    const itemTotal = (o.items || []).reduce((s, i) => s + (i.price * i.qty), 0);
-    const date      = o.date ? new Date(o.date).toLocaleDateString("en-US", {
+    const total = o.items.reduce((s, i) => s + (i.price * i.qty), 0);
+    const date = o.date ? new Date(o.date).toLocaleDateString("en-US", {
       year: "numeric", month: "short", day: "numeric"
     }) : "Just now";
 
-    const itemRows = (o.items || []).map(i => {
+    const itemRows = o.items.map(i => {
       const p = products.find(p => p.id === i.productId) || {};
       return `
         <div class="order-item-row">
@@ -319,7 +381,7 @@ function renderOrders(orders) {
             <small style="color:var(--muted)">${date} · ${o.user?.name || ""}</small>
           </div>
           <span class="order-status">${o.status}</span>
-          <div style="font-weight:700;font-size:16px">${fmt(itemTotal)}</div>
+          <div style="font-weight:700;font-size:16px">${fmt(total)}</div>
         </div>
         <div class="order-items">${itemRows}</div>
       </div>`;
@@ -328,9 +390,161 @@ function renderOrders(orders) {
   rerender();
 }
 
-//  Init 
+// ==================== REPORT ====================
+async function loadReport(date = null) {
+  const tbody = document.getElementById("reportTableBody");
+  if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:60px;color:var(--muted)">Loading report…</td></tr>`;
+
+  try {
+    let url = "/reports/daily";
+    if (date) url += `?date=${date}`;
+    const report = await apiFetch(url);
+    renderReport(report);
+  } catch (e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">Failed to load report.</td></tr>`;
+  }
+}
+
+function renderReport(report) {
+  const tbody = document.getElementById("reportTableBody");
+  const s = report?.summary || {};
+  const orders = report?.orders || [];
+
+  // Update stat cards
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('repTotalOrders',    s.totalOrders     ?? 0);
+  set('repTotalRevenue',   fmt(s.totalRevenue  ?? 0));
+  set('repTotalItems',     s.totalItems      ?? 0);
+  set('repUniqueCustomers',s.uniqueCustomers ?? 0);
+  set('repAvgOrder',       s.totalOrders > 0 ? fmt((s.totalRevenue||0) / s.totalOrders) : '$0.00');
+  set('repResultsCount',   `Showing ${orders.length} order${orders.length !== 1 ? 's' : ''}`);
+
+  const dateRange = document.getElementById('repDateRange');
+  if (dateRange) {
+    dateRange.textContent = report?.dateRange
+      ? `${report.dateRange.start} — ${report.dateRange.end}`
+      : 'All time';
+  }
+
+  if (!tbody) return;
+
+  if (!orders.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:60px;color:var(--muted)">No orders found for this period.</td></tr>`;
+    rerender();
+    return;
+  }
+
+  tbody.innerHTML = orders.map(order => {
+    const products = order.items.map(i => i.productName).join(', ');
+    const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
+    const statusClass = `status-${order.status}`;
+    const date = new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `
+      <tr>
+        <td><strong>#${order.id}</strong></td>
+        <td>${order.customer}</td>
+        <td style="color:var(--text-soft);font-size:12px">${order.email || ''}</td>
+        <td style="max-width:200px;color:var(--text-soft);font-size:12px">${products}</td>
+        <td style="text-align:center">${totalItems}</td>
+        <td><strong>${fmt(order.total)}</strong></td>
+        <td><span class="status-badge ${statusClass}">${order.status}</span></td>
+        <td>${date}</td>
+        <td>
+          <button class="btn-view-detail" onclick="viewOrderDetail(${order.id})">
+            <i data-lucide="eye"></i> View
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+
+  rerender();
+}
+
+
+// ==================== ORDER DETAIL ====================
+function viewOrderDetail(orderId) {
+  showToast("Loading order details...");
+
+  apiFetch(`/orders/${orderId}`).then(order => {
+    const modal = document.getElementById("orderDetailModal");
+    const body = document.getElementById("orderDetailBody");
+
+    const itemsHtml = order.items.map(item => {
+      const p = products.find(prod => prod.id === item.productId) || {};
+      const imgHtml = p.image_url 
+        ? `<img src="${p.image_url}" class="transcript-item-img" alt="${p.name || 'Product'}">`
+        : `<div class="transcript-item-fallback"><i data-lucide="package"></i></div>`;
+      return `
+        <div class="transcript-item">
+          ${imgHtml}
+          <div class="transcript-item-details">
+            <div class="transcript-item-name">${p.name || "Product #" + item.productId}</div>
+            <div class="transcript-item-meta">${item.qty} × ${fmt(item.price)}</div>
+          </div>
+          <div class="transcript-item-total">${fmt(item.price * item.qty)}</div>
+        </div>
+      `;
+    }).join("");
+
+    const total = order.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+    body.innerHTML = `
+      <div class="transcript-card">
+        <div class="transcript-header">
+          <div class="transcript-logo">MINI<span>MERQE</span></div>
+          <span class="transcript-badge ${order.status}">${order.status}</span>
+        </div>
+        <div class="transcript-grid">
+          <div>
+            <div class="transcript-section-title">Order Info</div>
+            <div class="transcript-box">
+              <div class="transcript-info-row"><strong>ID:</strong> #${order.id}</div>
+              <div class="transcript-info-row"><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</div>
+            </div>
+          </div>
+          <div>
+            <div class="transcript-section-title">Customer</div>
+            <div class="transcript-box">
+              <div class="transcript-info-row"><strong>Name:</strong> ${order.user?.name || 'N/A'}</div>
+              <div class="transcript-info-row"><strong>Email:</strong> ${order.user?.email || 'N/A'}</div>
+              <div class="transcript-info-row"><strong>Address:</strong> ${order.user?.address || 'N/A'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="transcript-section-title">Items Purchased</div>
+        <div class="transcript-items">
+          ${itemsHtml}
+        </div>
+        <div class="transcript-footer">
+          <div class="transcript-total-row">
+            <span>Total Paid</span>
+            <span>${fmt(total)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="transcript-actions">
+        <button class="btn-transcript-print" onclick="window.print()">
+          <i data-lucide="printer"></i> Print Receipt
+        </button>
+      </div>
+    `;
+
+    modal.style.display = "block";
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+    rerender();
+  }).catch(() => {
+    showToast("Failed to load order details", true);
+  });
+}
+
+function closeOrderDetail() {
+  document.getElementById("orderDetailModal").style.display = "none";
+}
+
+// ==================== INIT ====================
 document.addEventListener("DOMContentLoaded", () => {
-  // Nav buttons
   document.querySelectorAll("nav button, .cart-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const v = btn.dataset.view;
@@ -338,32 +552,127 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Modal buttons
   document.getElementById("closeModalBtn").addEventListener("click", closeModal);
   document.getElementById("placeOrderBtn").addEventListener("click", placeOrder);
+  // closeDetailModalBtn not in HTML — modal close is handled by inline onclick
 
-  // Close modal on overlay click
-  document.querySelector(".modal-overlay").addEventListener("click", e => {
-    if (e.target.classList.contains("modal-overlay")) closeModal();
+  document.querySelectorAll(".modal-overlay").forEach(overlay => {
+    overlay.addEventListener("click", e => {
+      if (e.target.classList.contains("modal-overlay")) {
+        closeModal();
+        closeOrderDetail();
+      }
+    });
   });
+
+  // ==================== PRODUCT SEARCH ====================
+  const productSearchInput = document.getElementById('productSearchInput');
+  const productSearchBtn = document.getElementById('productSearchBtn');
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
+  const clearResultsBtn = document.getElementById('clearSearchResultsBtn');
+
+  if (productSearchBtn) {
+    productSearchBtn.addEventListener('click', () => {
+      const query = productSearchInput?.value || '';
+      if (query.trim()) searchProducts(query);
+    });
+  }
+
+  if (productSearchInput) {
+    productSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = productSearchInput.value;
+        if (query.trim()) searchProducts(query);
+      }
+    });
+
+    productSearchInput.addEventListener('input', () => {
+      if (productSearchInput.value.trim()) {
+        if (clearSearchBtn) clearSearchBtn.style.display = 'flex';
+      } else {
+        if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+        if (searchQuery) clearProductSearch();
+      }
+    });
+  }
+
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      if (productSearchInput) productSearchInput.value = '';
+      clearSearchBtn.style.display = 'none';
+      clearProductSearch();
+    });
+  }
+
+  if (clearResultsBtn) {
+    clearResultsBtn.addEventListener('click', clearProductSearch);
+  }
+
+  // ==================== REPORT CONTROLS ====================
+  // IDs match the HTML: reportApplyFilters, reportResetFilters, reportSearchBtn, reportSearchInput, reportSingleDate
+  const reportFilterBtn = document.getElementById('reportApplyFilters');
+  const reportResetBtn = document.getElementById('reportResetFilters');
+  const reportSearchBtn = document.getElementById('reportSearchBtn');
+  const reportSearch = document.getElementById('reportSearchInput');
+  const reportDate = document.getElementById('reportSingleDate');
+
+  if (reportFilterBtn) {
+    reportFilterBtn.addEventListener('click', () => {
+      const date = reportDate?.value;
+      if (date) loadReport(date);
+      else showToast("Please select a date", true);
+    });
+  }
+
+  if (reportResetBtn) {
+    reportResetBtn.addEventListener('click', () => {
+      if (reportDate) reportDate.value = "";
+      loadReport();
+    });
+  }
+
+  if (reportSearchBtn && reportSearch) {
+    reportSearchBtn.addEventListener('click', () => {
+      const query = reportSearch.value.trim().toLowerCase();
+      const rows = document.getElementById('reportTableBody')?.querySelectorAll('tr');
+      rows?.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+      });
+    });
+
+    reportSearch.addEventListener('keydown', (e) => {
+      if (e.key === "Enter") reportSearchBtn.click();
+    });
+  }
+
+  if (reportDate) {
+    reportDate.value = new Date().toISOString().split('T')[0];
+  }
 
   // Hero buttons
-  document.getElementById("learnMoreBtn").addEventListener("click", () => {
-    document.getElementById("products-grid").scrollIntoView({ behavior: "smooth" });
+  document.getElementById('learnMoreBtn').addEventListener('click', () => {
+    document.getElementById("products-grid")?.scrollIntoView({ behavior: "smooth" });
   });
-  document.getElementById("contactBtn").addEventListener("click", () => {
+  document.getElementById('contactBtn').addEventListener('click', () => {
     showToast("📧 hello@minimerqe.com");
   });
 
   initShop();
 });
 
-// expose for inline onclick handlers
-window.showView      = showView;
-window.setFilter     = setFilter;
-window.addToCart     = addToCart;
-window.changeQty     = changeQty;
+// ==================== EXPOSE GLOBALLY ====================
+window.showView = showView;
+window.setFilter = setFilter;
+window.addToCart = addToCart;
+window.changeQty = changeQty;
 window.removeFromCart = removeFromCart;
-window.openCheckout  = openCheckout;
-window.closeModal    = closeModal;
-window.placeOrder    = placeOrder;
+window.openCheckout = openCheckout;
+window.closeModal = closeModal;
+window.placeOrder = placeOrder;
+window.viewOrderDetail = viewOrderDetail;
+window.closeOrderDetail = closeOrderDetail;
+window.loadReport = loadReport;
+window.searchProducts = searchProducts;
+window.clearProductSearch = clearProductSearch;

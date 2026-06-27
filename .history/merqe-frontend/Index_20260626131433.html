@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MINI MERQE — Adult Style for Little Ones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">MINI<span>MERQE</span></div>
+  <nav>
+    <button class="active" data-view="shop">
+      <i data-lucide="store"></i> Shop
+    </button>
+    <button data-view="cart">
+      <i data-lucide="shopping-bag"></i> Cart
+    </button>
+    <button data-view="orders">
+      <i data-lucide="package"></i> Orders
+    </button>
+    <button data-view="report">
+      <i data-lucide="bar-chart-2"></i> Reports
+    </button>
+  </nav>
+  <button class="cart-btn" data-view="cart">
+    <i data-lucide="shopping-cart"></i> Cart
+    <span class="cart-count" id="cart-count">0</span>
+  </button>
+</header>
+
+<!-- SHOP VIEW -->
+<div id="view-shop" class="view active">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-text">
+      <div class="hero-label">✨ new collection 2026 ✨</div>
+      <h1>Adult style <br>for the <span>little ones</span></h1>
+      <p>See the styles in your child's face photos to see what they look like.</p>
+      <div class="hero-actions">
+        <button class="hero-btn-primary" id="learnMoreBtn">Learn more</button>
+        <button class="hero-btn-secondary" id="contactBtn">Contact us</button>
+      </div>
+    </div>
+    <div class="hero-img">
+      <img
+        src="images/hero.jpg"
+        alt="Mini Merqe collection"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+      >
+      <div class="hero-img-fallback">
+        <i data-lucide="image"></i>
+        <span>Add <strong>images/hero.jpg</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT SEARCH BAR -->
+  <div class="product-search-section">
+    <div class="product-search-bar">
+      <i data-lucide="search"></i>
+      <input 
+        type="text" 
+        id="productSearchInput" 
+        placeholder="Search for products by name, category, or description..."
+        class="product-search-input"
+      />
+      <button id="productSearchBtn" class="product-search-btn">
+        <i data-lucide="search"></i> Search
+      </button>
+      <button id="clearSearchBtn" class="product-search-clear" style="display:none;">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="search-results-info" id="searchResultsInfo" style="display:none;">
+      <span id="searchResultCount"></span>
+      <button id="clearSearchResultsBtn" class="clear-results-btn">Clear Search</button>
+    </div>
+  </div>
+
+  <div class="section-label">Categories</div>
+  <div class="categories" id="categories-bar"></div>
+
+  <div class="section-label">Mini collection · special offers</div>
+  <div class="products-grid" id="products-grid"></div>
+</div>
+
+<!-- CART VIEW -->
+<div id="view-cart" class="view">
+  <h2><i data-lucide="shopping-bag"></i> Your Cart</h2>
+  <div id="cart-body"></div>
+</div>
+
+<!-- ORDERS VIEW -->
+<div id="view-orders" class="view">
+  <h2><i data-lucide="package"></i> Orders</h2>
+  <div id="orders-body"></div>
+</div>
+
+<!-- REPORT VIEW -->
+<div id="view-report" class="view">
+  <div class="report-header-section">
+    <h2><i data-lucide="bar-chart-2"></i> Daily Purchase Report</h2>
+    <p style="color:var(--text-soft);margin-top:-8px;margin-bottom:20px;">Track and analyze customer purchases with advanced filtering</p>
+  </div>
+
+  <!-- Search & Filter Section -->
+  <div class="search-filter-section">
+    <!-- Search Bar -->
+    <div class="search-bar-container">
+      <div class="search-bar">
+        <i data-lucide="search"></i>
+        <input 
+          type="text" 
+          id="reportSearchInput" 
+          placeholder="Search by customer name, order ID, product, or email..."
+          class="search-input"
+        />
+        <button id="reportSearchBtn" class="search-btn">
+          <i data-lucide="search"></i> Search
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="filter-controls">
+      <div class="filter-group">
+        <div class="filter-item">
+          <label><i data-lucide="calendar"></i> Single Date</label>
+          <input type="date" id="reportSingleDate" class="filter-input" />
+        </div>
+        <div class="filter-divider">or</div>
+        <div class="filter-item">
+          <label><i data-lucide="calendar-range"></i> Date Range</label>
+          <div class="date-range-inputs">
+            <input type="date" id="reportStartDate" class="filter-input" placeholder="From" />
+            <span class="range-separator">→</span>
+            <input type="date" id="reportEndDate" class="filter-input" placeholder="To" />
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button id="reportApplyFilters" class="btn-apply">
+          <i data-lucide="filter"></i> Apply
+        </button>
+        <button id="reportResetFilters" class="btn-reset">
+          <i data-lucide="refresh-cw"></i> Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Date Filters -->
+    <div class="quick-filters">
+      <span class="quick-label">Quick:</span>
+      <button class="quick-btn" data-days="0">Today</button>
+      <button class="quick-btn" data-days="1">Yesterday</button>
+      <button class="quick-btn" data-days="7">Last 7 Days</button>
+      <button class="quick-btn" data-days="30">Last 30 Days</button>
+      <button class="quick-btn" data-days="90">Last 90 Days</button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="report-summary-grid" id="reportSummaryGrid">
+    <div class="report-stat-card">
+      <div class="stat-label">Total Orders</div>
+      <div class="stat-value" id="repTotalOrders">0</div>
+    </div>
+    <div class="report-stat-card">
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-value revenue" id="repTotalRevenue">$0.00</div>
+    </div>
+    <div class="report-stat-card">
+      <div class="stat-label">Items Sold</div>
+      <div class="stat-value" id="repTotalItems">0</div>
+    </div>
+    <div class="report-stat-card">
+      <div class="stat-label">Unique Customers</div>
+      <div class="stat-value" id="repUniqueCustomers">0</div>
+    </div>
+    <div class="report-stat-card">
+      <div class="stat-label">Avg. Order Value</div>
+      <div class="stat-value" id="repAvgOrder">$0.00</div>
+    </div>
+  </div>
+
+  <!-- Results Info -->
+  <div class="report-results-info">
+    <span id="repResultsCount">Showing 0 orders</span>
+    <span id="repDateRange">No date filter applied</span>
+    <div class="report-actions">
+      <button id="repExportBtn" class="btn-export-small">
+        <i data-lucide="file-text"></i> Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="report-table-container">
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Email</th>
+          <th>Products</th>
+          <th>Items</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reportTableBody">
+        <tr>
+          <td colspan="9" style="text-align:center;padding:60px;color:var(--muted);">
+            <i data-lucide="loader-circle" style="width:32px;height:32px;display:block;margin:0 auto 12px;animation:spin 1s linear infinite;"></i>
+            Loading report data...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div id="checkout-modal" style="display:none">
+  <div class="modal-overlay">
+    <div class="modal">
+      <h3><i data-lucide="credit-card"></i> Checkout</h3>
+      <div class="form-group">
+        <label>Full name</label>
+        <input type="text" id="f-name" placeholder="Jane Doe">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="f-email" placeholder="hello@example.com">
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" id="f-address" placeholder="123 Maple Street">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="closeModalBtn">Cancel</button>
+        <button class="btn-confirm" id="placeOrderBtn">
+          <i data-lucide="check"></i> Place Order
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div id="orderDetailModal" style="display:none">
+  <div class="modal-overlay" onclick="closeOrderDetailModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i data-lucide="receipt"></i> Order Details</h3>
+        <button class="modal-close" onclick="closeOrderDetailModal()">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="orderDetailBody">
+        <!-- Order details will be populated here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
