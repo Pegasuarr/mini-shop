@@ -228,7 +228,7 @@ function renderCart() {
 
     // FIX 2: cart images also use BASE prefix
     const imgHTML = p.image_Url
-      ? `<img src="${BASE}/${p.image_Url}" alt="${p.name}"
+      ? `<img src="${BASE}/${p.imageUrl}" alt="${p.name}"
              style="width:100%;height:100%;object-fit:cover;border-radius:20px"
              onerror="this.style.display='none'">`
       : `<i data-lucide="${p.icon || 'gift'}"></i>`;
@@ -470,27 +470,21 @@ function viewOrderDetail(orderId) {
     const body = document.getElementById("orderDetailBody");
 
     const itemsHtml = order.items.map(item => {
-  const p = products.find(prod => prod.id === item.productId) || {};
-
-  const imgHtml = p.imageUrl
-    ? `<img src="${p.imageUrl}" alt="${p.name || ''}"
-           style="width:100%;height:100%;object-fit:cover;border-radius:10px"
-           onerror="this.style.display='none'">`
-    : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">
-         <i data-lucide="${p.icon || 'gift'}" style="width:24px;height:24px;stroke:var(--muted)"></i>
-       </div>`;
-
-  return `
-    <div class="transcript-item">
-      <div class="transcript-item-img">${imgHtml}</div>
-      <div class="transcript-item-details">
-        <div class="transcript-item-name">${p.name || "Product #" + item.productId}</div>
-        <div class="transcript-item-meta">${item.qty} × ${fmt(item.price)}</div>
-      </div>
-      <div class="transcript-item-total">${fmt(item.price * item.qty)}</div>
-    </div>
-  `;
-}).join("");
+      const p = products.find(prod => prod.id === item.productId) || {};
+      const imgHtml = p.image_url 
+        ? `<img src="${p.image_url}" class="transcript-item-img" alt="${p.name || 'Product'}">`
+        : `<div class="transcript-item-fallback"><i data-lucide="package"></i></div>`;
+      return `
+        <div class="transcript-item">
+          ${imgHtml}
+          <div class="transcript-item-details">
+            <div class="transcript-item-name">${p.name || "Product #" + item.productId}</div>
+            <div class="transcript-item-meta">${item.qty} × ${fmt(item.price)}</div>
+          </div>
+          <div class="transcript-item-total">${fmt(item.price * item.qty)}</div>
+        </div>
+      `;
+    }).join("");
 
     const total = order.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
 

@@ -1,12 +1,10 @@
 const API = 'http://localhost:8080/api';
-const BASE = 'http://localhost:8080';
 
 // State
 let cart = [];
 let filter = 0;
 let products = [];
 let categories = [];
-let searchQuery = '';
 
 // Helpers
 const fmt = n => "$" + parseFloat(n).toFixed(2);
@@ -30,6 +28,7 @@ function showToast(msg, isError = false) {
   setTimeout(() => t.remove(), 3000);
 }
 
+// Views
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll("nav button, .cart-btn").forEach(b => b.classList.remove("active"));
@@ -39,9 +38,9 @@ function showView(name) {
   if (name === "cart") renderCart();
   if (name === "orders") loadOrders();
   if (name === "report") loadReport();
-  rerender();
 }
 
+// API fetch helper
 async function apiFetch(path, options = {}) {
   const res = await fetch(API + path, {
     headers: { "Content-Type": "application/json" },
@@ -52,7 +51,7 @@ async function apiFetch(path, options = {}) {
   return data;
 }
 
-// ==================== SHOP ====================
+// Shop
 async function initShop() {
   document.getElementById("products-grid").innerHTML =
     `<div style="text-align:center;padding:60px;color:var(--muted)">Loading products…</div>`;
@@ -80,28 +79,11 @@ function renderShop() {
       </button>
     `).join("")}`;
 
-  let visible = filter ? products.filter(p => p.categoryId === filter) : products;
+  const visible = filter ? products.filter(p => p.categoryId === filter) : products;
   const grid = document.getElementById("products-grid");
 
-  if (searchQuery) {
-    visible = visible.filter(p =>
-      p.name.toLowerCase().includes(searchQuery) ||
-      (p.categoryName && p.categoryName.toLowerCase().includes(searchQuery))
-    );
-  }
-
   if (!visible.length) {
-    let message = searchQuery
-      ? `<div class="no-search-results">
-          <i data-lucide="search"></i>
-          <h3>No products found</h3>
-          <p>Try adjusting your search terms for "${searchQuery}"</p>
-          <button onclick="clearProductSearch()" style="margin-top:12px;padding:8px 20px;border:1px solid var(--border);border-radius:40px;background:var(--surface);cursor:pointer;">
-            Clear Search
-          </button>
-        </div>`
-      : `<div style="text-align:center;padding:60px;color:var(--muted)">No products found.</div>`;
-    grid.innerHTML = message;
+    grid.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">No products found.</div>`;
     rerender();
     return;
   }
@@ -110,9 +92,8 @@ function renderShop() {
     const cat = categories.find(c => c.id === p.categoryId) || {};
     const inCart = cart.find(i => i.productId === p.id);
 
-    // FIX 1: correct template literal with BASE prefix
     const imgHTML = p.imageUrl
-      ? `<img src="${BASE}/${p.imageUrl}" alt="${p.name}"
+      ? `<img src="${p.imageUrl}" alt="${p.name}"
              style="width:100%;height:100%;object-fit:cover;transition:transform .4s"
              onerror="this.style.display='none'">`
       : `<i data-lucide="${p.icon || 'gift'}"></i>`;
@@ -141,56 +122,11 @@ function renderShop() {
       </div>`;
   }).join("");
 
-  updateSearchResultsInfo(visible.length);
   rerender();
-}
-
-// ==================== PRODUCT SEARCH ====================
-function searchProducts(query) {
-  searchQuery = query.trim().toLowerCase();
-  const searchInfo = document.getElementById('searchResultsInfo');
-  const clearBtn = document.getElementById('clearSearchBtn');
-
-  if (!searchQuery) {
-    clearProductSearch();
-    return;
-  }
-
-  if (clearBtn) clearBtn.style.display = 'flex';
-  if (searchInfo) searchInfo.style.display = 'flex';
-  filter = 0;
-  renderShop();
-}
-
-function clearProductSearch() {
-  searchQuery = '';
-  const input = document.getElementById('productSearchInput');
-  const searchInfo = document.getElementById('searchResultsInfo');
-  const clearBtn = document.getElementById('clearSearchBtn');
-
-  if (input) input.value = '';
-  if (clearBtn) clearBtn.style.display = 'none';
-  if (searchInfo) searchInfo.style.display = 'none';
-  filter = 0;
-  renderShop();
-}
-
-function updateSearchResultsInfo(count) {
-  const resultCount = document.getElementById('searchResultCount');
-  if (resultCount && searchQuery) {
-    resultCount.textContent = `Found ${count} product${count !== 1 ? 's' : ''} matching "${searchQuery}"`;
-  }
 }
 
 function setFilter(id) {
   filter = id;
-  const input = document.getElementById('productSearchInput');
-  if (input) input.value = '';
-  searchQuery = '';
-  const searchInfo = document.getElementById('searchResultsInfo');
-  if (searchInfo) searchInfo.style.display = 'none';
-  const clearBtn = document.getElementById('clearSearchBtn');
-  if (clearBtn) clearBtn.style.display = 'none';
   renderShop();
 }
 
@@ -203,9 +139,10 @@ function addToCart(productId) {
   showToast("Added to cart");
 }
 
-// ==================== CART ====================
+// Cart
 function renderCart() {
   const el = document.getElementById("cart-body");
+
   if (!cart.length) {
     el.innerHTML = `
       <div class="cart-empty">
@@ -226,9 +163,8 @@ function renderCart() {
     const lineTotal = (p.price || 0) * item.qty;
     subtotal += lineTotal;
 
-    // FIX 2: cart images also use BASE prefix
-    const imgHTML = p.image_Url
-      ? `<img src="${BASE}/${p.image_Url}" alt="${p.name}"
+    const imgHTML = p.imageUrl
+      ? `<img src="${p.imageUrl}" alt="${p.name}"
              style="width:100%;height:100%;object-fit:cover;border-radius:20px"
              onerror="this.style.display='none'">`
       : `<i data-lucide="${p.icon || 'gift'}"></i>`;
@@ -287,7 +223,7 @@ function removeFromCart(productId) {
   showToast("Item removed");
 }
 
-// ==================== CHECKOUT ====================
+// Checkout
 function openCheckout() {
   if (!cart.length) { showToast("Your cart is empty", true); return; }
   document.getElementById("checkout-modal").style.display = "block";
@@ -326,7 +262,7 @@ async function placeOrder() {
   }
 }
 
-// ==================== ORDERS ====================
+// Orders
 async function loadOrders() {
   const el = document.getElementById("orders-body");
   el.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">Loading…</div>`;
@@ -390,155 +326,163 @@ function renderOrders(orders) {
   rerender();
 }
 
-// ==================== REPORT ====================
+// Report
 async function loadReport(date = null) {
-  const tbody = document.getElementById("reportTableBody");
-  if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:60px;color:var(--muted)">Loading report…</td></tr>`;
+  const el = document.getElementById("report-body");
+  el.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted)">Loading report…</div>`;
 
   try {
     let url = "/reports/daily";
-    if (date) url += `?date=${date}`;
+    if (date) {
+      url += `?date=${date}`;
+    }
     const report = await apiFetch(url);
     renderReport(report);
   } catch (e) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">Failed to load report.</td></tr>`;
+    el.innerHTML = `<div class="cart-empty"><div>Failed to load report.</div></div>`;
   }
 }
 
 function renderReport(report) {
-  const tbody = document.getElementById("reportTableBody");
-  const s = report?.summary || {};
-  const orders = report?.orders || [];
+  const el = document.getElementById("report-body");
 
-  // Update stat cards
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  set('repTotalOrders',    s.totalOrders     ?? 0);
-  set('repTotalRevenue',   fmt(s.totalRevenue  ?? 0));
-  set('repTotalItems',     s.totalItems      ?? 0);
-  set('repUniqueCustomers',s.uniqueCustomers ?? 0);
-  set('repAvgOrder',       s.totalOrders > 0 ? fmt((s.totalRevenue||0) / s.totalOrders) : '$0.00');
-  set('repResultsCount',   `Showing ${orders.length} order${orders.length !== 1 ? 's' : ''}`);
-
-  const dateRange = document.getElementById('repDateRange');
-  if (dateRange) {
-    dateRange.textContent = report?.dateRange
-      ? `${report.dateRange.start} — ${report.dateRange.end}`
-      : 'All time';
-  }
-
-  if (!tbody) return;
-
-  if (!orders.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:60px;color:var(--muted)">No orders found for this period.</td></tr>`;
+  if (!report || !report.orders || !report.orders.length) {
+    el.innerHTML = `
+      <div class="cart-empty">
+        <i data-lucide="bar-chart-2" style="width:56px;height:56px;stroke:var(--muted)"></i>
+        <div style="margin-top:16px">No orders found for this period</div>
+      </div>`;
     rerender();
     return;
   }
 
-  tbody.innerHTML = orders.map(order => {
-    const products = order.items.map(i => i.productName).join(', ');
-    const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
+  // Summary cards
+  let html = `
+    <div class="report-summary-grid">
+      <div class="report-stat-card">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-value">${report.summary.totalOrders}</div>
+      </div>
+      <div class="report-stat-card">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value revenue">${fmt(report.summary.totalRevenue)}</div>
+      </div>
+      <div class="report-stat-card">
+        <div class="stat-label">Items Sold</div>
+        <div class="stat-value">${report.summary.totalItems}</div>
+      </div>
+      <div class="report-stat-card">
+        <div class="stat-label">Unique Customers</div>
+        <div class="stat-value">${report.summary.uniqueCustomers}</div>
+      </div>
+    </div>
+    <div style="margin-bottom: 16px; color: var(--text-soft);">
+      <i data-lucide="calendar"></i> 
+      ${report.dateRange.start} — ${report.dateRange.end}
+    </div>
+  `;
+
+  // Table
+  html += `
+    <div class="report-table-container">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  report.orders.forEach(order => {
+    const items = order.items.map(i => i.productName).join(', ');
     const statusClass = `status-${order.status}`;
-    const date = new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    return `
+    html += `
       <tr>
         <td><strong>#${order.id}</strong></td>
         <td>${order.customer}</td>
-        <td style="color:var(--text-soft);font-size:12px">${order.email || ''}</td>
-        <td style="max-width:200px;color:var(--text-soft);font-size:12px">${products}</td>
-        <td style="text-align:center">${totalItems}</td>
+        <td style="max-width:200px;color:var(--text-soft)">${items}</td>
         <td><strong>${fmt(order.total)}</strong></td>
         <td><span class="status-badge ${statusClass}">${order.status}</span></td>
-        <td>${date}</td>
+        <td>${new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
         <td>
           <button class="btn-view-detail" onclick="viewOrderDetail(${order.id})">
             <i data-lucide="eye"></i> View
           </button>
         </td>
-      </tr>`;
-  }).join('');
+      </tr>
+    `;
+  });
 
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  el.innerHTML = html;
   rerender();
 }
 
-
-// ==================== ORDER DETAIL ====================
+// Order Detail
 function viewOrderDetail(orderId) {
+  // Find the order from the report data
+  const reportBody = document.getElementById("report-body");
+  const orderEl = reportBody.querySelector(`tr td:first-child strong`);
+  // We need to fetch the order details from the API
   showToast("Loading order details...");
-
+  
   apiFetch(`/orders/${orderId}`).then(order => {
     const modal = document.getElementById("orderDetailModal");
     const body = document.getElementById("orderDetailBody");
-
+    
     const itemsHtml = order.items.map(item => {
-  const p = products.find(prod => prod.id === item.productId) || {};
-
-  const imgHtml = p.imageUrl
-    ? `<img src="${p.imageUrl}" alt="${p.name || ''}"
-           style="width:100%;height:100%;object-fit:cover;border-radius:10px"
-           onerror="this.style.display='none'">`
-    : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%">
-         <i data-lucide="${p.icon || 'gift'}" style="width:24px;height:24px;stroke:var(--muted)"></i>
-       </div>`;
-
-  return `
-    <div class="transcript-item">
-      <div class="transcript-item-img">${imgHtml}</div>
-      <div class="transcript-item-details">
-        <div class="transcript-item-name">${p.name || "Product #" + item.productId}</div>
-        <div class="transcript-item-meta">${item.qty} × ${fmt(item.price)}</div>
-      </div>
-      <div class="transcript-item-total">${fmt(item.price * item.qty)}</div>
-    </div>
-  `;
-}).join("");
-
+      const p = products.find(prod => prod.id === item.productId) || {};
+      return `
+        <div class="order-detail-item">
+          <span>${p.name || "Product #" + item.productId} × ${item.qty}</span>
+          <span>${fmt(item.price * item.qty)}</span>
+        </div>
+      `;
+    }).join("");
+    
     const total = order.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-
+    
     body.innerHTML = `
-      <div class="transcript-card">
-        <div class="transcript-header">
-          <div class="transcript-logo">MINI<span>MERQE</span></div>
-          <span class="transcript-badge ${order.status}">${order.status}</span>
+      <div style="margin-bottom:16px;">
+        <div><strong>Order #${order.id}</strong></div>
+        <div style="color:var(--text-soft);margin-top:4px;">
+          <i data-lucide="user"></i> ${order.user.name}
         </div>
-        <div class="transcript-grid">
-          <div>
-            <div class="transcript-section-title">Order Info</div>
-            <div class="transcript-box">
-              <div class="transcript-info-row"><strong>ID:</strong> #${order.id}</div>
-              <div class="transcript-info-row"><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</div>
-            </div>
-          </div>
-          <div>
-            <div class="transcript-section-title">Customer</div>
-            <div class="transcript-box">
-              <div class="transcript-info-row"><strong>Name:</strong> ${order.user?.name || 'N/A'}</div>
-              <div class="transcript-info-row"><strong>Email:</strong> ${order.user?.email || 'N/A'}</div>
-              <div class="transcript-info-row"><strong>Address:</strong> ${order.user?.address || 'N/A'}</div>
-            </div>
-          </div>
+        <div style="color:var(--text-soft);">
+          <i data-lucide="mail"></i> ${order.user.email}
         </div>
-        <div class="transcript-section-title">Items Purchased</div>
-        <div class="transcript-items">
-          ${itemsHtml}
+        <div style="color:var(--text-soft);">
+          <i data-lucide="map-pin"></i> ${order.user.address}
         </div>
-        <div class="transcript-footer">
-          <div class="transcript-total-row">
-            <span>Total Paid</span>
-            <span>${fmt(total)}</span>
-          </div>
+        <div style="margin-top:8px;">
+          <span class="status-badge status-${order.status}">${order.status}</span>
+          <span style="margin-left:12px;color:var(--text-soft);font-size:12px;">
+            ${new Date(order.date).toLocaleString()}
+          </span>
         </div>
       </div>
-      <div class="transcript-actions">
-        <button class="btn-transcript-print" onclick="window.print()">
-          <i data-lucide="printer"></i> Print Receipt
-        </button>
+      <div style="border-top:1px solid var(--border);padding-top:12px;">
+        ${itemsHtml}
+      </div>
+      <div class="order-detail-total">
+        <span>Total</span>
+        <span>${fmt(total)}</span>
       </div>
     `;
-
+    
     modal.style.display = "block";
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
-    }
     rerender();
   }).catch(() => {
     showToast("Failed to load order details", true);
@@ -549,8 +493,9 @@ function closeOrderDetail() {
   document.getElementById("orderDetailModal").style.display = "none";
 }
 
-// ==================== INIT ====================
+// Init
 document.addEventListener("DOMContentLoaded", () => {
+  // Nav buttons
   document.querySelectorAll("nav button, .cart-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const v = btn.dataset.view;
@@ -558,10 +503,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Modal buttons
   document.getElementById("closeModalBtn").addEventListener("click", closeModal);
   document.getElementById("placeOrderBtn").addEventListener("click", placeOrder);
-  // closeDetailModalBtn not in HTML — modal close is handled by inline onclick
+  document.getElementById("closeDetailModalBtn").addEventListener("click", closeOrderDetail);
 
+  // Close modals on overlay click
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
     overlay.addEventListener("click", e => {
       if (e.target.classList.contains("modal-overlay")) {
@@ -571,104 +518,59 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ==================== PRODUCT SEARCH ====================
-  const productSearchInput = document.getElementById('productSearchInput');
-  const productSearchBtn = document.getElementById('productSearchBtn');
-  const clearSearchBtn = document.getElementById('clearSearchBtn');
-  const clearResultsBtn = document.getElementById('clearSearchResultsBtn');
+  // Report controls
+  document.getElementById("reportFilterBtn").addEventListener("click", () => {
+    const date = document.getElementById("reportDate").value;
+    if (date) {
+      loadReport(date);
+    } else {
+      showToast("Please select a date", true);
+    }
+  });
 
-  if (productSearchBtn) {
-    productSearchBtn.addEventListener('click', () => {
-      const query = productSearchInput?.value || '';
-      if (query.trim()) searchProducts(query);
-    });
-  }
+  document.getElementById("reportResetBtn").addEventListener("click", () => {
+    document.getElementById("reportDate").value = "";
+    loadReport();
+  });
 
-  if (productSearchInput) {
-    productSearchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const query = productSearchInput.value;
-        if (query.trim()) searchProducts(query);
-      }
-    });
-
-    productSearchInput.addEventListener('input', () => {
-      if (productSearchInput.value.trim()) {
-        if (clearSearchBtn) clearSearchBtn.style.display = 'flex';
-      } else {
-        if (clearSearchBtn) clearSearchBtn.style.display = 'none';
-        if (searchQuery) clearProductSearch();
-      }
-    });
-  }
-
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', () => {
-      if (productSearchInput) productSearchInput.value = '';
-      clearSearchBtn.style.display = 'none';
-      clearProductSearch();
-    });
-  }
-
-  if (clearResultsBtn) {
-    clearResultsBtn.addEventListener('click', clearProductSearch);
-  }
-
-  // ==================== REPORT CONTROLS ====================
-  // IDs match the HTML: reportApplyFilters, reportResetFilters, reportSearchBtn, reportSearchInput, reportSingleDate
-  const reportFilterBtn = document.getElementById('reportApplyFilters');
-  const reportResetBtn = document.getElementById('reportResetFilters');
-  const reportSearchBtn = document.getElementById('reportSearchBtn');
-  const reportSearch = document.getElementById('reportSearchInput');
-  const reportDate = document.getElementById('reportSingleDate');
-
-  if (reportFilterBtn) {
-    reportFilterBtn.addEventListener('click', () => {
-      const date = reportDate?.value;
-      if (date) loadReport(date);
-      else showToast("Please select a date", true);
-    });
-  }
-
-  if (reportResetBtn) {
-    reportResetBtn.addEventListener('click', () => {
-      if (reportDate) reportDate.value = "";
-      loadReport();
-    });
-  }
-
-  if (reportSearchBtn && reportSearch) {
-    reportSearchBtn.addEventListener('click', () => {
-      const query = reportSearch.value.trim().toLowerCase();
-      const rows = document.getElementById('reportTableBody')?.querySelectorAll('tr');
-      rows?.forEach(row => {
+  document.getElementById("reportSearchBtn").addEventListener("click", () => {
+    const query = document.getElementById("reportSearch").value.trim().toLowerCase();
+    if (query) {
+      // Search through the report data
+      const reportBody = document.getElementById("report-body");
+      const rows = reportBody.querySelectorAll("tbody tr");
+      rows.forEach(row => {
         const text = row.textContent.toLowerCase();
         row.style.display = text.includes(query) ? "" : "none";
       });
-    });
+    } else {
+      // Show all rows
+      const rows = document.querySelectorAll("#report-body tbody tr");
+      rows.forEach(row => row.style.display = "");
+    }
+  });
 
-    reportSearch.addEventListener('keydown', (e) => {
-      if (e.key === "Enter") reportSearchBtn.click();
-    });
-  }
-
-  if (reportDate) {
-    reportDate.value = new Date().toISOString().split('T')[0];
-  }
+  document.getElementById("reportSearch").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      document.getElementById("reportSearchBtn").click();
+    }
+  });
 
   // Hero buttons
-  document.getElementById('learnMoreBtn').addEventListener('click', () => {
-    document.getElementById("products-grid")?.scrollIntoView({ behavior: "smooth" });
+  document.getElementById("learnMoreBtn").addEventListener("click", () => {
+    document.getElementById("products-grid").scrollIntoView({ behavior: "smooth" });
   });
-  document.getElementById('contactBtn').addEventListener('click', () => {
+  document.getElementById("contactBtn").addEventListener("click", () => {
     showToast("📧 hello@minimerqe.com");
   });
+
+  // Set default report date to today
+  document.getElementById("reportDate").value = new Date().toISOString().split('T')[0];
 
   initShop();
 });
 
-// ==================== EXPOSE GLOBALLY ====================
+// Expose for inline onclick handlers
 window.showView = showView;
 window.setFilter = setFilter;
 window.addToCart = addToCart;
@@ -680,5 +582,3 @@ window.placeOrder = placeOrder;
 window.viewOrderDetail = viewOrderDetail;
 window.closeOrderDetail = closeOrderDetail;
 window.loadReport = loadReport;
-window.searchProducts = searchProducts;
-window.clearProductSearch = clearProductSearch;
