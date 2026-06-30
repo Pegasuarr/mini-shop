@@ -26,8 +26,28 @@ flowchart TD
     ShowSuccess[Show popup: Your order was placed!]:::io
     ShowError[Show message: Order failed, please try again]:::io
 
+    %% New Admin/Dashboard steps
+    GoToDashboard[Go to Daily Report Dashboard]:::process
+    RequestStats[Request Daily Sales stats]:::process
+    DisplayDashboard[Show sales metrics & customer table]:::io
+    
+    WantDelete{Want to delete a customer?}:::decision
+    ClickDelete[Click Delete User Button]:::process
+    SendDelete[Send Delete request to Server]:::process
+    
+    CascadeDelete[(Execute CASCADE deletion of customer & orders)]:::database
+    TriggerAlign[Trigger ID Alignment Engine]:::process
+    AutoRealign[(Execute ID re-sequencing transaction in PostgreSQL)]:::database
+    
+    DeleteSuccess[Send success response back to dashboard]:::process
+    RefreshDashboard[Reload dashboard tables & metrics]:::io
+
+    %% Background Scheduler
+    CronTrigger[Background Scheduler: Trigger checks every 4 hours]:::process
+
     Done([End]):::startEnd
 
+    %% Connections for Customer Flow
     Start --> BrowseProducts
     BrowseProducts --> ClickProduct
     ClickProduct --> AddToCart
@@ -45,3 +65,21 @@ flowchart TD
     RejectOrder --> ShowError
     ShowError --> ViewCart
     ShowSuccess --> Done
+
+    %% Connections for Admin Dashboard Flow
+    Start --> GoToDashboard
+    GoToDashboard --> RequestStats
+    RequestStats --> DisplayDashboard
+    DisplayDashboard --> WantDelete
+    WantDelete -- No --> Done
+    WantDelete -- Yes, delete user --> ClickDelete
+    ClickDelete --> SendDelete
+    SendDelete --> CascadeDelete
+    CascadeDelete --> TriggerAlign
+    TriggerAlign --> AutoRealign
+    AutoRealign --> DeleteSuccess
+    DeleteSuccess --> RefreshDashboard
+    RefreshDashboard --> Done
+
+    %% Background Scheduler connections
+    CronTrigger --> AutoRealign
