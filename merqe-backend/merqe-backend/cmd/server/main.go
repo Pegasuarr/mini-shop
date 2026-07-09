@@ -29,28 +29,28 @@ func main() {
 
 	// Start background scheduler to re-sequence customer IDs every 12 hours
 	// Start background scheduler
-go func() {
-    ticker := time.NewTicker(4 * time.Hour)
-    log.Println("⏰ Scheduled customer ID re-sequencing initialized (runs every 4 hours)")
-    
-    // ── Run immediately on startup ──
-    log.Println("⏰ Running initial customer ID re-sequencing...")
-    if err := s.ResequenceUserIDs(); err != nil {
-        log.Printf("❌ Failed to re-sequence customer IDs: %v", err)
-    } else {
-        log.Println("✓ Initial customer ID re-sequencing complete")
-    }
+	go func() {
+		ticker := time.NewTicker(4 * time.Hour)
+		log.Println("⏰ Scheduled customer ID re-sequencing initialized (runs every 4 hours)")
+		
+		// ── Run immediately on startup ──
+		log.Println("⏰ Running initial customer ID re-sequencing...")
+		if err := s.ResequenceUserIDs(); err != nil {
+			log.Printf("❌ Failed to re-sequence customer IDs: %v", err)
+		} else {
+			log.Println("✓ Initial customer ID re-sequencing complete")
+		}
 
-    // ── Then repeat every 4 hours ──
-    for range ticker.C {
-        log.Println("⏰ Running scheduled customer ID re-sequencing...")
-        if err := s.ResequenceUserIDs(); err != nil {
-            log.Printf("❌ Failed to re-sequence customer IDs: %v", err)
-        } else {
-            log.Println("✓ Scheduled customer ID re-sequencing complete")
-        }
-    }
-}()
+		// ── Then repeat every 4 hours ──
+		for range ticker.C {
+			log.Println("⏰ Running scheduled customer ID re-sequencing...")
+			if err := s.ResequenceUserIDs(); err != nil {
+				log.Printf("❌ Failed to re-sequence customer IDs: %v", err)
+			} else {
+				log.Println("✓ Scheduled customer ID re-sequencing complete")
+			}
+		}
+	}()
 
 	h := handler.New(s)
     mux := http.NewServeMux()
